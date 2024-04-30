@@ -1100,7 +1100,7 @@ class Extractor():
             # The '=' might occurr within quotes:
             # ''''<span lang="pt-pt" xml:lang="pt-pt">cénicas</span>'''
 
-            m = re.match(" *([^=']*?) *=(.*)", param, re.DOTALL)
+            m = re.match(" *([^='&<]*?) *=(.*)", param, re.DOTALL)
             if m:
                 # This is a named parameter.  This case also handles parameter
                 # assignments like "2=xxx", where the number of an unnamed
