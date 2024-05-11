@@ -437,6 +437,7 @@ def process_dump(input_file, template_file, out_file, file_size, file_compress,
     # initialize jobs queue
     jobs_queue = Queue(maxsize=maxsize)
 
+
     # start worker processes
     logging.info("Using %d extract processes.", process_count)
     workers = []

@@ -44,11 +44,11 @@ knownNamespaces = set(['Template'])
 # Drop these elements from article text
 #
 discardElements = [
-    'gallery', 'timeline', 'noinclude', 'pre',
+    'gallery', 'timeline', 'noinclude',
     'table', 'tr', 'td', 'th', 'caption', 'div',
     'form', 'input', 'select', 'option', 'textarea',
     'ul', 'li', 'ol', 'dl', 'dt', 'dd', 'menu', 'dir',
-    'ref', 'references', 'img', 'imagemap', 'source', 'small'
+    'references', 'img', 'imagemap', 'source', 'small'
 ]
 
 ##
@@ -87,7 +87,7 @@ def clean(extractor, text, expand_templates=False, html_safe=True):
         text = dropNested(text, r'{{', r'}}')
 
     # Drop tables
-    text = dropNested(text, r'{\|', r'\|}')
+    # text = dropNested(text, r'{\|', r'\|}')
 
     # replace external links
     text = replaceExternalLinks(text)
@@ -266,8 +266,8 @@ def compact(text, mark_headers=False):
             listLevel = []
 
         # Drop residuals of lists
-        elif line[0] in '{|' or line[-1] == '}':
-            continue
+        # elif line[0] in '{|' or line[-1] == '}':
+        #     continue
         # Drop irrelevant lines
         elif (line[0] == '(' and line[-1] == ')') or line.strip('.-') == '':
             continue
@@ -286,7 +286,11 @@ def compact(text, mark_headers=False):
             # elif line[0] == ' ':
             #     continue
 
-    return page
+    final_page = []
+    for line in page:
+        final_page.append(re.sub(r"&lt;.*&gt;", "", line))
+
+    return final_page
 
 
 # ----------------------------------------------------------------------
@@ -1270,6 +1274,8 @@ class Extractor():
         # extend frame before subst, since there may be recursion in default
         # parameter value, e.g. {{OTRS|celebrative|date=April 2015}} in article
         # 21637542 in enwiki.
+        if title == "Template:Ppoem" and "1" in params:  # this is hardcoding for now...
+            return self.expandTemplates(params["1"])
         self.frame.append((title, params))
         instantiated = template.subst(params, self)
         # logging.debug('instantiated %d %s', len(self.frame), instantiated)
