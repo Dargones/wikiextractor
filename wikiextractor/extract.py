@@ -48,7 +48,7 @@ discardElements = [
     'table', 'tr', 'td', 'th', 'caption', 'div',
     'form', 'input', 'select', 'option', 'textarea',
     'ul', 'li', 'ol', 'dl', 'dt', 'dd', 'menu', 'dir',
-    'references', 'img', 'imagemap', 'source', 'small'
+    'references', 'img', 'imagemap', 'source'
 ]
 
 ##
@@ -286,11 +286,7 @@ def compact(text, mark_headers=False):
             # elif line[0] == ' ':
             #     continue
 
-    final_page = []
-    for line in page:
-        final_page.append(re.sub(r"&lt;.*&gt;", "", line))
-
-    return final_page
+    return page
 
 
 # ----------------------------------------------------------------------
@@ -963,11 +959,20 @@ class Extractor():
         self.magicWords['currenthour'] = time.strftime('%H')
         self.magicWords['currenttime'] = time.strftime('%H:%M:%S')
 
+        # Separate all highlighted letters
+        text = re.sub("\\{ *\\{*[rR]otation *\\|([ ']*.[ ']*)\\| *90 *} *}", r"\1 ", text)
+        text = re.sub("\\{ *\\{ *rotation *\\|([ ']*.[ ']*)} *}", r"\1 ", text)
+        text = re.sub("\\{ *\\{ *Red *\\|([ ']*.[ ']*)} *}", r"\1 ", text)
+        text = re.sub("'''( *. *)'''", r"\1 ", text)
+
         text = clean(self, text, expand_templates=expand_templates,
                      html_safe=html_safe)
 
         text = compact(text, mark_headers=mark_headers)
-        return text
+        final_page = []
+        for line in text:
+            final_page.append(re.sub(r"&lt;.*&gt;", "", line))
+        return final_page
 
     def extract(self, out, html_safe=True):
         """
@@ -1217,18 +1222,6 @@ class Extractor():
         if redirected:
             title = redirected
 
-        # get the template
-        if title in templateCache:
-            template = templateCache[title]
-        elif title in templates:
-            template = Template.parse(templates[title])
-            # add it to cache
-            templateCache[title] = template
-            del templates[title]
-        else:
-            # The page being included could not be identified
-            return ''
-
         # logging.debug('TEMPLATE %s: %s', title, template)
 
         # tplarg          = "{{{" parts "}}}"
@@ -1269,20 +1262,40 @@ class Extractor():
 
         # build a dict of name-values for the parameter values
         params = self.templateParams(params)
+        return "\n".join(params.values())
+        """
+        # get the template
+        if title in templateCache:
+            template = templateCache[title]
+        elif title in templates:
+            template = Template.parse(templates[title])
+            # add it to cache
+            templateCache[title] = template
+            del templates[title]
+        else:
+            # The page being included could not be identified
+            return "\n".join(params.values())
 
-        # Perform parameter substitution
-        # extend frame before subst, since there may be recursion in default
-        # parameter value, e.g. {{OTRS|celebrative|date=April 2015}} in article
-        # 21637542 in enwiki.
-        if title == "Template:Ppoem" and "1" in params:  # this is hardcoding for now...
-            return self.expandTemplates(params["1"])
         self.frame.append((title, params))
         instantiated = template.subst(params, self)
+
+        # if title == "Template:Ppoem" and "1" in params:  # this is hardcoding for now...
+        #     return self.expandTemplates(params["1"])
+        # self.frame.append((title, params))
+        # instantiated = template.subst(params, self)
         # logging.debug('instantiated %d %s', len(self.frame), instantiated)
         value = self.expandTemplates(instantiated)
         self.frame.pop()
+        cannotFind = False
+        for param in params.values():
+            if param not in value:
+                cannotFind = True
+                break
+
+        if cannotFind:
+            value = "\n".join(params.values())
         # logging.debug('   INVOCATION> %s %d %s', title, len(self.frame), value)
-        return value
+        return value"""
 
 
 # ----------------------------------------------------------------------
